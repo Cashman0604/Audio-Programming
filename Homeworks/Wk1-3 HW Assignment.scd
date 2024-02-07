@@ -42,31 +42,55 @@ f = {
 
 
 //4. Plot two cycles for the following waveforms:
-{SinOsc.ar(200)}
-{Saw.ar(100)}
-{LFTri.ar(10)}
-{Pulse.ar(500)}
+{SinOsc.ar(200)}.plot(2/200);
+{Saw.ar(100)}.plot(2/100);
+{LFTri.ar(10)}.plot(2/10);
+{Pulse.ar(500)}.plot(2/500);
 
 
 //5. Build a function using SinOsc with the appropriate variables and arguments to be able to change the amplitude and frequency arguments at run-time. Demonstrate this using the 'set' message. Provide two unique values for each argument using set (4 lines of code which can be loaded during run-time).
 
+(
+	f = {
+	    arg freq=440, amp=0.1;
+		var sig;
+		sig = SinOsc.ar(freq, mul:amp);
+	}.play;
+)
 
-
-
+f.set(\freq, 660);
+f.set(\freq, 160);
+f.set(\amp, 0.05);
+f.set(\amp, 0.2);
 
 
 //6. Build a function where a simple envelope (use "Env.new") is applied to a sound signal of your choice and which frees itself after completion (hint: 'doneAction:2').
 
-
+(
+	f = {
+		var sig, e;
+		e = Env.new([0,0.1,0.5,1,5,0.2,0], [0.05,0.7,1,0.6,4,0.1], 'lin');
+		e = EnvGen.kr(e, doneAction:2);
+		sig = BrownNoise.ar() * e * 0.1;
+	}.play;
+)
 
 
 
 
 //7. Build a function using a sound UGen and apply an Env.adsr envelope to it. Demonstrate the use of the 'gate' argument to advance to the release phase of the adsr.
 
+(
+	f = {
+		arg gate=1;
+		var e, sig;
+		e = Env.adsr(0.3, 0.3, 0.5, 3);
+		e = EnvGen.kr(e, gate, doneAction:2);
+		sig = Saw.ar() * e;
+	}.play;
+)
 
-
-
+f.set(\gate, 0);
 
 
 
