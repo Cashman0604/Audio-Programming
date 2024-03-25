@@ -121,29 +121,30 @@ Synth(\varSaw);
 /*****GUI CODE GOES HERE*****/
 (
 w.close;
-w = Window.new("There Might Be Music", Rect.new(200,200,1000,800));
+w = Window.new("There Might Be Music", Rect.new(200,200,550,800));
 w.front;
 
 ~txtBkg = Color.white;
 ~txtClr = Color.red;
 
-~panelBlip = CompositeView.new(w, Rect.new(0,0,500,300))
+~panelBlip = CompositeView.new(w, Rect.new(0,0,270,300))
 .background_(Color.gray);
 
-~panelVarSaw = CompositeView.new(w, Rect.new(500,0,500,300))
-.background_(Color.black);
+~panelVarSaw = CompositeView.new(w, Rect.new(280,0,270,300))
+.background_(Color.gray);
 
-~panelAll = CompositeView.new(w, Rect.new(0,300,1000,500));
+~panelAll = CompositeView.new(w, Rect.new(0,310,550,490))
+.background_(Color.gray);
 
 // MAIN LABELS //
 
-~textBlip = StaticText(~panelBlip, Rect.new(175,25,150,25))
+~textBlip = StaticText(~panelBlip, Rect.new(60,25,150,25))
 .string_("Blip Instrument Controls")
 .font_(Font("Monaco", 14))
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
-~textVarSaw = StaticText.new(~panelVarSaw, Rect.new(172,25,155,25))
+~textVarSaw = StaticText.new(~panelVarSaw, Rect.new(57.5,25,155,25))
 .string_("Saw Instrument Controls")
 .font_(Font("Monaco", 14))
 .background_(~txtBkg)
@@ -181,7 +182,7 @@ w.front;
 
 // FREQUENCY KNOBS //
 
-~freqBlip = CompositeView(~panelBlip, Rect.new(90,60,70,70));
+~freqBlip = CompositeView(~panelBlip, Rect.new(135,60,70,70));
 
 ~freqBlipKnob = Knob.new(~freqBlip, Rect.new(10,0,50,50))
 .action_({
@@ -194,7 +195,7 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
-~freqVarSaw = CompositeView(~panelVarSaw, Rect.new(90,60,70,70));
+~freqVarSaw = CompositeView(~panelVarSaw, Rect.new(135,60,70,70));
 
 ~freqVarSawKnob = Knob.new(~freqVarSaw, Rect.new(10,0,50,50))
 .action_({
@@ -239,9 +240,38 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+// STOP BUTTONS //
+
+~blipStream = ~blipStrtPbind;
+
+~stopBlip = Button.new(~panelBlip, Rect.new(130,210,80,30))
+.action_({
+	arg btn;
+	if (btn.value == 1) {
+		~blipStream.play;
+	} {
+		~blipStream.stop;
+	}
+})
+.states_([["OFF"], ["ON"]]);
+
+~varsawStream = ~varsawStrtPbind;
+
+~stopVarSaw = Button.new(~panelVarSaw, Rect.new(130,210,80,30))
+.action_({
+	arg btn;
+	if (btn.value == 1) {
+		~varsawStream.play;
+	} {
+		~varsawStream.stop;
+	}
+})
+.states_([["OFF"], ["ON"]]);
+
+
 // SCALE //
 
-~scaleBtn = PopUpMenu.new(~panelAll, Rect.new(0,0,130,50))
+~scaleBtn = PopUpMenu.new(~panelAll, Rect.new(22.5,10,130,50))
 .items_(["Aeolian", "Dorian", "Gong", "Ionian", "Major", "Minor", "Minor Pentatonic"])
 .action_({
 	arg i;
@@ -252,7 +282,7 @@ w.front;
 
 // DEGREE BUTTONS //
 
-~degrees = CompositeView(~panelAll, Rect.new(500,0,150,125));
+~degrees = CompositeView(~panelAll, Rect.new(390,10,150,125));
 
 ~degreeBtn1 = Button.new(~degrees, Rect(0,0,50,50))
 .action_({
@@ -304,7 +334,7 @@ w.front;
 
 // TEMPO KNOB //
 
-~tempo = CompositeView.new(~panelAll, Rect.new(0,75,50,75));
+~tempo = CompositeView.new(~panelAll, Rect.new(62.5,60,50,75));
 
 ~tempoKnob = Knob.new(~tempo, Rect.new(0,0,50,50))
 .action_({
@@ -320,25 +350,25 @@ w.front;
 
 // PAN SLIDER //
 
-~pan = CompositeView.new(~panelAll, Rect.new(150,100,200,50));
+~pan = CompositeView.new(~panelAll, Rect.new(175,85,200,50));
 
-~panSlider = Slider.new(~pan, Rect.new(0,25,200,25))
+~panSlider = Slider.new(~pan, Rect.new(0,0,200,25))
 .action_({
 	arg sld;
 	Pdefn(\panAll, sld.value);
 })
 .valueAction_(0.5);
-~panTxtLeft = StaticText.new(~pan, Rect(0,0,25,25))
+~panTxtLeft = StaticText.new(~pan, Rect(0,25,25,25))
 .string_("Left")
 .font_(Font("Monaco", 14))
 .background_(~txtBkg)
 .stringColor_(~txtClr);
-~panTxtRight = StaticText.new(~pan, Rect(165,0,35,25))
+~panTxtRight = StaticText.new(~pan, Rect(165,25,35,25))
 .string_("Right")
 .font_(Font("Monaco", 14))
 .background_(~txtBkg)
 .stringColor_(~txtClr);
-~panTxtPan = StaticText.new(~pan, Rect(88,0,24,25))
+~panTxtPan = StaticText.new(~pan, Rect(88,25,24,25))
 .string_("Pan")
 .font_(Font("Monaco", 14))
 .background_(~txtBkg)
@@ -346,7 +376,18 @@ w.front;
 
 // STOP ALL BUTTON //
 
-
+~stopAllBtn = Button.new(~panelAll, Rect.new(250,10,50,50))
+.action_({
+	arg btn;
+	if (btn.value == 1) {
+		~varsawStream.play;
+		~blipStream.play;
+	} {
+		~varsawStream.stop;
+		~blipStream.stop;
+	}
+})
+.states_([["ALL OFF"], ["ALL ON"]]);
 
 
 )
