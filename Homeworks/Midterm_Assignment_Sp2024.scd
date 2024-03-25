@@ -25,7 +25,7 @@ SynthDef.new(\blip, {
 	env = EnvGen.kr(Env.triangle(dur,lev),doneAction:2);
 	sig = Blip.ar([freq, freq], nharm);
 	sig = sig * env * amp;
-	sig = Pan2.ar(sig,pan);
+	sig = Pan2.ar(sig, pan);
 	Out.ar(out, sig);
 }).add;
 )
@@ -40,7 +40,7 @@ SynthDef.new(\varSaw, {
 	env = EnvGen.kr(Env.perc(atk,rel),doneAction:2);
 	sig = VarSaw.ar([freq, freq * 0.2.midiratio], width:width);
 	sig = sig * env * amp * lev;
-	sig = Pan2.ar(sig,pan);
+	sig = Pan2.ar(sig, pan);
 	Out.ar(out, sig);
 }).add;
 )
@@ -82,9 +82,9 @@ Synth(\varSaw);
 	\out, 0,
 	\nharm, Pdefn(\nharmBlip, Pwrand([200, Pexprand(199,100)],[0.6,0.4], inf)),
 	\scale, Pdefn(\scaleAll, Scale.minorPentatonic),
-	\degree, Pdefn(\degAll, Pseq([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf)),
+	\degree, Pdefn(\degAll, Pseq([1,2,3,4,5], inf)),
 	\tempo, Pdefn(\tempoAll, 1);
-);
+).play;
 )
 
 
@@ -142,7 +142,9 @@ w.front;
 ~panelAll = CompositeView.new(w, Rect.new(0,310,550,490))
 .background_(Color.gray);
 
+
 // MAIN LABELS //
+
 
 ~textBlip = StaticText(~panelBlip, Rect.new(60,25,150,25))
 .string_("Blip Instrument Controls")
@@ -156,7 +158,9 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // VOLUME SLIDERS //
+
 
 ~volBlip = CompositeView.new(~panelBlip, Rect.new(15,50,50,200));
 
@@ -186,14 +190,16 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // FREQUENCY KNOBS //
+
 
 ~freqBlip = CompositeView(~panelBlip, Rect.new(135,60,70,70));
 
 ~freqBlipKnob = Knob.new(~freqBlip, Rect.new(10,0,50,50))
 .action_({
 	arg knb;
-	Pdefn(\freqBlip, (440 + 440 * knb.value.midiratio));
+	Pdefn(\freqBlip, (440 + (440 * knb.value)));
 });
 ~freqBlipTxt = StaticText.new(~freqBlip, Rect.new(0,50,70,20))
 .string_("Frequency")
@@ -206,7 +212,7 @@ w.front;
 ~freqVarSawKnob = Knob.new(~freqVarSaw, Rect.new(10,0,50,50))
 .action_({
 	arg knb;
-	Pdefn(\freqVarSaw, (440 + 440 * knb.value.midiratio));
+	Pdefn(\freqVarSaw, (440 + (440 * knb.value)));
 });
 ~freqVarSawTxt = StaticText.new(~freqVarSaw, Rect.new(0,50,70,20))
 .string_("Frequency")
@@ -214,7 +220,9 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // NHARM SLIDER //
+
 
 ~nharmBlip = CompositeView.new(~panelBlip, Rect.new(90,150,160,50));
 
@@ -230,7 +238,9 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // WIDTH SLIDER //
+
 
 ~widthVarSaw = CompositeView.new(~panelVarSaw, Rect.new(90,150,160,50));
 
@@ -246,7 +256,9 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // STOP BUTTONS //
+
 
 ~stopBlip = Button.new(~panelBlip, Rect.new(130,210,80,30))
 .action_({
@@ -273,6 +285,7 @@ w.front;
 
 // SCALE //
 
+
 ~scaleBtn = PopUpMenu.new(~panelAll, Rect.new(22.5,10,130,50))
 .items_(["Aeolian", "Dorian", "Gong", "Ionian", "Major", "Minor", "Minor Pentatonic"])
 .action_({
@@ -282,7 +295,9 @@ w.front;
 })
 .valueAction_(6);
 
+
 // DEGREE BUTTONS //
+
 
 ~degrees = CompositeView(~panelAll, Rect.new(390,10,150,125));
 
@@ -328,7 +343,9 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // TEMPO KNOB //
+
 
 ~tempo = CompositeView.new(~panelAll, Rect.new(62.5,60,50,75));
 
@@ -344,7 +361,9 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // PAN SLIDER //
+
 
 ~pan = CompositeView.new(~panelAll, Rect.new(175,85,200,50));
 
@@ -370,7 +389,9 @@ w.front;
 .background_(~txtBkg)
 .stringColor_(~txtClr);
 
+
 // STOP ALL BUTTON //
+
 
 ~stopAllBtn = Button.new(~panelAll, Rect.new(250,10,50,50))
 .action_({
