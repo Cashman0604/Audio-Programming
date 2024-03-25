@@ -25,6 +25,7 @@ SynthDef.new(\blip, {
 	env = EnvGen.kr(Env.triangle(dur,lev),doneAction:2);
 	sig = Blip.ar([freq, freq], nharm);
 	sig = sig * env * amp;
+	sig = Pan2.ar(sig,pan);
 	Out.ar(out, sig);
 }).add;
 )
@@ -39,6 +40,7 @@ SynthDef.new(\varSaw, {
 	env = EnvGen.kr(Env.perc(atk,rel),doneAction:2);
 	sig = VarSaw.ar([freq, freq * 0.2.midiratio], width:width);
 	sig = sig * env * amp * lev;
+	sig = Pan2.ar(sig,pan);
 	Out.ar(out, sig);
 }).add;
 )
@@ -73,14 +75,14 @@ Synth(\varSaw);
 ~blipStrtPbind = Pbind(
 	\instrument, \blip,
 	\freq, Pdefn(\freqBlip, 440),
-	\dur, Pwrand([Pexprand(0.05,0.25),Pexprand(0.25,0.5)],[0.8,0.2],inf),
-	\lev, Pdefn(\levBlip, Pxrand(0.25,0.5,0.75,1,1.25)),
+	\dur, Pwrand([Pexprand(0.29,0.3),Pexprand(0.3,0.31)],[0.8,0.2],inf),
+	\lev, Pdefn(\levBlip, Pxrand([0.25,0.5,0.75,1,1.25],inf)),
 	\amp, Pdefn(\ampBlip, Pwhite(0.1,0.5,inf)),
 	\pan, Pdefn(\panAll, 0),
 	\out, 0,
 	\nharm, Pdefn(\nharmBlip, Pwrand([200, Pexprand(199,100)],[0.6,0.4], inf)),
 	\scale, Pdefn(\scaleAll, Scale.minorPentatonic),
-	\degree, Pdefn(\degBlip, Pxrand([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf)),
+	\degree, Pdefn(\degAll, Pseq([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf)),
 	\tempo, Pdefn(\tempoAll, 1);
 );
 )
@@ -98,14 +100,14 @@ Synth(\varSaw);
 	\amp, Pdefn(\ampVarSaw, Pwhite(0.1,0.5,inf)),
 	\pan, Pdefn(\panAll, 0),
 	\out, 0,
-	\width, Pdefn(\widthVarSaw, Pwhite(0.01,1,inf)),
+	\width, Pdefn(\widthVarSaw, Pwhite(0.1,1,inf)),
 	\scale, Pdefn(\scaleAll, Scale.minorPentatonic),
-	\degree, Pdefn(\degVarSaw, Pxrand([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf)),
+	\degree, Pdefn(\degAll, Pseq([1,2,3,4,5], inf)),
 	\tempo, Pdefn(\tempoAll, 1);
 );
 )
 
-
+// [0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]
 )
 
 
@@ -120,12 +122,16 @@ Synth(\varSaw);
 
 /*****GUI CODE GOES HERE*****/
 (
-w.close;
+case {w.class == Window} {w.close};
 w = Window.new("There Might Be Music", Rect.new(200,200,550,475));
 w.front;
 
 ~txtBkg = Color.white;
 ~txtClr = Color.red;
+~btnOnBkg = Color.green;
+~btnOnClr = Color.black;
+~btnOffBkg = Color.red;
+~btnOffClr = Color.black;
 
 ~panelBlip = CompositeView.new(w, Rect.new(0,0,270,300))
 .background_(Color.gray);
@@ -231,7 +237,7 @@ w.front;
 ~widthSlider = Slider.new(~widthVarSaw, Rect.new(0,0,160,20))
 .action_({
 	arg sld;
-	Pdefn(\widthVarSaw, 200 * sld.value);
+	Pdefn(\widthVarSaw, sld.value);
 })
 .valueAction_(1);
 ~widthVarSawTxt = StaticText.new(~widthVarSaw, Rect.new(60,25,40,25))
@@ -242,31 +248,27 @@ w.front;
 
 // STOP BUTTONS //
 
-~blipStream = ~blipStrtPbind;
-
 ~stopBlip = Button.new(~panelBlip, Rect.new(130,210,80,30))
 .action_({
 	arg btn;
 	if (btn.value == 1) {
-		~blipStream.play(quant:1);
+		~blipStream = ~blipStrtPbind.play(quant:1);
 	} {
 		~blipStream.stop;
 	}
 })
-.states_([["OFF"], ["ON"]]);
-
-~varsawStream = ~varsawStrtPbind;
+.states_([["OFF", ~btnOffClr, ~btnOffBkg], ["ON", ~btnOnClr, ~btnOnBkg]]);
 
 ~stopVarSaw = Button.new(~panelVarSaw, Rect.new(130,210,80,30))
 .action_({
 	arg btn;
 	if (btn.value == 1) {
-		~varsawStream.play(quant:1);
+		~varsawStream = ~varsawStrtPbind.play(quant:1);
 	} {
 		~varsawStream.stop;
 	}
 })
-.states_([["OFF"], ["ON"]]);
+.states_([["OFF", ~btnOffClr, ~btnOffBkg], ["ON", ~btnOnClr, ~btnOnBkg]]);
 
 
 // SCALE //
@@ -287,43 +289,37 @@ w.front;
 ~degreeBtn1 = Button.new(~degrees, Rect(0,0,50,50))
 .action_({
 	arg btn;
-	Pdefn(\degBlip, Pxrand([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf));
-	Pdefn(\degVarSaw, Pxrand([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf));
+	Pdefn(\degAll, Pseq([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf));
 })
 .states_([["1"]]);
 ~degreeBtn2 = Button.new(~degrees, Rect(50,0,50,50))
 .action_({
 	arg btn;
-	Pdefn(\degBlip, Pxrand([[1,3,5],[2,4,5],[3,4,6],[2,3,5],[3,5,6]], inf));
-	Pdefn(\degVarSaw, Pxrand([[1,3,5],[2,4,5],[3,4,6],[2,3,5],[3,5,6]], inf));
+	Pdefn(\degAll, Pseq([[1,3,5],[2,4,5],[3,4,6],[2,3,5],[3,5,6]], inf));
 })
 .states_([["2"]]);
 ~degreeBtn3 = Button.new(~degrees, Rect(100,0,50,50))
 .action_({
 	arg btn;
-	Pdefn(\degBlip, Pxrand([[2,4,6],[3,5,6],[4,5,7],[3,4,6],[4,6,7]], inf));
-	Pdefn(\degVarSaw, Pxrand([[2,4,6],[3,5,6],[4,5,7],[3,4,6],[4,6,7]], inf));
+	Pdefn(\degAll, Pseq([[2,4,6],[3,5,6],[4,5,7],[3,4,6],[4,6,7]], inf));
 })
 .states_([["3"]]);
 ~degreeBtn4 = Button.new(~degrees, Rect(0,50,50,50))
 .action_({
 	arg btn;
-	Pdefn(\degBlip, Pxrand([[0,2,4],[3,5,6],[2,3,5],[3,4,6],[2,4,5]], inf));
-	Pdefn(\degVarSaw, Pxrand([[0,2,4],[3,5,6],[2,3,5],[3,4,6],[2,4,5]], inf));
+	Pdefn(\degAll, Pseq([[0,2,4],[3,5,6],[2,3,5],[3,4,6],[2,4,5]], inf));
 })
 .states_([["4"]]);
 ~degreeBtn5 = Button.new(~degrees, Rect(50,50,50,50))
 .action_({
 	arg btn;
-	Pdefn(\degBlip, Pxrand([[2,4,6],[1,3,4],[4,5,7],[1,2,4],[4,6,7]], inf));
-	Pdefn(\degVarSaw, Pxrand([[2,4,6],[1,3,4],[4,5,7],[1,2,4],[4,6,7]], inf));
+	Pdefn(\degAll, Pseq([[2,4,6],[1,3,4],[4,5,7],[1,2,4],[4,6,7]], inf));
 })
 .states_([["5"]]);
 ~degreeBtn6 = Button.new(~degrees, Rect(100,50,50,50))
 .action_({
 	arg btn;
-	Pdefn(\degBlip, Pxrand([[0,2,4],[1,3,5],[2,3,5],[3,4,6],[2,4,5]], inf));
-	Pdefn(\degVarSaw, Pxrand([[0,2,4],[1,3,5],[2,3,5],[3,4,6],[2,4,5]], inf));
+	Pdefn(\degAll, Pseq([[0,2,4],[1,3,5],[2,3,5],[3,4,6],[2,4,5]], inf));
 })
 .states_([["6"]]);
 ~degreeTxt = StaticText(~degrees, Rect(25,100,101,25))
@@ -355,7 +351,7 @@ w.front;
 ~panSlider = Slider.new(~pan, Rect.new(0,0,200,25))
 .action_({
 	arg sld;
-	Pdefn(\panAll, sld.value);
+	Pdefn(\panAll, (sld.value * 2) - 1);
 })
 .valueAction_(0.5);
 ~panTxtLeft = StaticText.new(~pan, Rect(0,25,25,25))
@@ -380,18 +376,16 @@ w.front;
 .action_({
 	arg btn;
 	if (btn.value == 1) {
-		~varsawStream.play(quant:1);
-		~blipStream.play(quant:1);
-		~stopVarSaw.value_(1);
-		~stopBlip.value_(1);
+		case {~stopVarSaw.value() == 0}
+		{~stopVarSaw.valueAction_(1)};
+		case {~stopBlip.value() == 0}
+		{~stopBlip.valueAction_(1)};
 	} {
-		~varsawStream.stop;
-		~blipStream.stop;
-		~stopVarSaw.value_(0);
-		~stopBlip.value_(0);
+		~stopVarSaw.valueAction_(0);
+		~stopBlip.valueAction_(0);
 	}
 })
-.states_([["ALL OFF"], ["ALL ON"]]);
+.states_([["OFF", ~btnOffClr, ~btnOffBkg], ["ON", ~btnOnClr, ~btnOnBkg]]);
 
 
 )
