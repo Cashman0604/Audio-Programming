@@ -1,7 +1,7 @@
 // Part 1
 (
 SynthDef.new(\saw, {
-	arg freq=400, atk=0.01, rel=1. amp=0.2, out=0;
+	arg freq=400, atk=0.01, rel=1, amp=0.2, out=0;
 	var sig, env;
 	env = EnvGen.kr(Env.perc(atk,rel),doneAction:2);
 	sig = Saw.ar([freq, freq * 0.2.midiratio], width:0.5);
