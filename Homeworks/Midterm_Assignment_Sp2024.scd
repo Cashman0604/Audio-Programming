@@ -34,11 +34,11 @@ SynthDef.new(\blip, {
 //VarSaw.ar SynthDef
 (
 SynthDef.new(\varSaw, {
-	arg freq=440, atk=0.1, rel=1, amp=0.05, pan=0, out=0, width=0.5;
+	arg freq=440, atk=0.1, rel=1, amp=0.05, lev=1, pan=0, out=0, width=0.5;
 	var sig, env;
 	env = EnvGen.kr(Env.perc(atk,rel),doneAction:2);
 	sig = VarSaw.ar([freq, freq * 0.2.midiratio], width:width);
-	sig = sig * env * amp;
+	sig = sig * env * amp * lev;
 	Out.ar(out, sig);
 }).add;
 )
@@ -121,7 +121,7 @@ Synth(\varSaw);
 /*****GUI CODE GOES HERE*****/
 (
 w.close;
-w = Window.new("There Might Be Music", Rect.new(200,200,550,800));
+w = Window.new("There Might Be Music", Rect.new(200,200,550,475));
 w.front;
 
 ~txtBkg = Color.white;
@@ -248,7 +248,7 @@ w.front;
 .action_({
 	arg btn;
 	if (btn.value == 1) {
-		~blipStream.play;
+		~blipStream.play(quant:1);
 	} {
 		~blipStream.stop;
 	}
@@ -261,7 +261,7 @@ w.front;
 .action_({
 	arg btn;
 	if (btn.value == 1) {
-		~varsawStream.play;
+		~varsawStream.play(quant:1);
 	} {
 		~varsawStream.stop;
 	}
@@ -326,7 +326,7 @@ w.front;
 	Pdefn(\degVarSaw, Pxrand([[0,2,4],[1,3,5],[2,3,5],[3,4,6],[2,4,5]], inf));
 })
 .states_([["6"]]);
-~degreeTxt = StaticText(~degrees, Rect(25,100,100,25))
+~degreeTxt = StaticText(~degrees, Rect(25,100,101,25))
 .string_("Degree Changer")
 .font_(Font("Monaco", 14))
 .background_(~txtBkg)
@@ -380,11 +380,15 @@ w.front;
 .action_({
 	arg btn;
 	if (btn.value == 1) {
-		~varsawStream.play;
-		~blipStream.play;
+		~varsawStream.play(quant:1);
+		~blipStream.play(quant:1);
+		~stopVarSaw.value_(1);
+		~stopBlip.value_(1);
 	} {
 		~varsawStream.stop;
 		~blipStream.stop;
+		~stopVarSaw.value_(0);
+		~stopBlip.value_(0);
 	}
 })
 .states_([["ALL OFF"], ["ALL ON"]]);
