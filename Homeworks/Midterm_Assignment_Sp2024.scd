@@ -5,12 +5,12 @@
 //PART 1. Design and test 2 SynthDefs using Blip.ar and VarSaw.ar
 
 //Requirements:
-//-Each SynthDef must have discernible pitch.
-//-Each must be stereophonic. (Use a different method of multi-channel expansion for each.)
-//-Each must have an envelope. (Use a different method for each.)
-//-Each must have basic control of freq, amp, envelope parameters (atk, rel, or similar, etc.), and pan at a minimum.
-//-Blip should have control of nharm, and VarSaw should have control of width. Create arguments for both in your SynthDef.
-//-Both SynthDefs must utilize some sort of frequency detuning. (Hint: You might use some form of randomness, like LFNoise1 or detune a frequency in one of the two stereo channels of a 'freq' array. Use a different method for each.)
+////-Each SynthDef must have discernible pitch.
+////-Each must be stereophonic. (Use a different method of multi-channel expansion for each.)
+////-Each must have an envelope. (Use a different method for each.)
+////-Each must have basic control of freq, amp, envelope parameters (atk, rel, or similar, etc.), and pan at a minimum.
+////-Blip should have control of nharm, and VarSaw should have control of width. Create arguments for both in your SynthDef.
+////-Both SynthDefs must utilize some sort of frequency detuning. (Hint: You might use some form of randomness, like LFNoise1 or detune a frequency in one of the two stereo channels of a 'freq' array. Use a different method for each.)
 
 //Boot the server
 s.boot;
@@ -22,9 +22,9 @@ SynthDef.new(\blip, {
 	arg freq=440, dur=0.1, lev=1, amp=0.05, pan=0, out=0, nharm=200;
 	var sig, env;
 	env = EnvGen.kr(Env.triangle(dur,lev),doneAction:2);
-	sig = Blip.ar([freq, freq], nharm);
+	sig = Blip.ar(LFNoise1.ar(4,2, freq)!2, nharm);
 	sig = sig * env * amp;
-	sig = Pan2.ar(sig, pan);
+	sig = Balance2.ar(sig[0], sig[1], pan);
 	Out.ar(out, sig);
 }).add;
 
@@ -35,7 +35,7 @@ SynthDef.new(\varSaw, {
 	env = EnvGen.kr(Env.perc(atk,rel),doneAction:2);
 	sig = VarSaw.ar([freq, freq * 0.2.midiratio], width:width);
 	sig = sig * env * amp * lev;
-	sig = Pan2.ar(sig, pan);
+	sig = Balance2.ar(sig[0], sig[1], pan);
 	Out.ar(out, sig);
 }).add;
 
@@ -50,15 +50,15 @@ Synth(\varSaw);
 
 
 //PART 2. Create Pbinds to control each SynthDef
-//-Each Pbind must address all of the controllable parameters from PART 1.
-//-Do not hardwire any parameters. Each should have some form of contrained randomness. (Use the various data patterns you've learned to accomplish this: Pseq,Prand,Pxrand,Pwrand,Pexprand,and Pwhite.)
-//-Use degree and scale for handling pitch in each of the Pbinds.
-//-Wrap the degree parameter and a 'lev' parameter into a 'Pdefn' for each Pbind. (The user should be able to change degree patterns and the output level during performance.) [The ability to change scales is EXTRA CREDIT.] The output level will be controlled by a Slider for each instrument in the GUI, which controls the 'lev' parameter. Create 'lev' arguments in both of your SynthDefs.)
-//-Create numerous pitch-degree pattern possibilities. (You must include at least FIVE. Each can be triggered by a button in the GUI.)
-//-You can create chords using arrays of pitches within your larger degree array... [[0,2,4],4,5,6,7] would add tonic triad on the first degree of the scale being used.
-//-Clearly comment all of your Pbinds and what you're attempting to do with each pattern parameter.
-//-Remember to use the 'quant' message to ensure all of your Pbinds are synced.
-//It should look like this: ~blip.play(quant:1)
+////-Each Pbind must address all of the controllable parameters from PART 1.
+////-Do not hardwire any parameters. Each should have some form of contrained randomness. (Use the various data patterns you've learned to accomplish this: Pseq,Prand,Pxrand,Pwrand,Pexprand,and Pwhite.)
+////-Use degree and scale for handling pitch in each of the Pbinds.
+////-Wrap the degree parameter and a 'lev' parameter into a 'Pdefn' for each Pbind. (The user should be able to change degree patterns and the output level during performance.) [The ability to change scales is EXTRA CREDIT.] The output level will be controlled by a Slider for each instrument in the GUI, which controls the 'lev' parameter. Create 'lev' arguments in both of your SynthDefs.)
+////-Create numerous pitch-degree pattern possibilities. (You must include at least FIVE. Each can be triggered by a button in the GUI.)
+////-You can create chords using arrays of pitches within your larger degree array... [[0,2,4],4,5,6,7] would add tonic triad on the first degree of the scale being used.
+////-Clearly comment all of your Pbinds and what you're attempting to do with each pattern parameter.
+////-Remember to use the 'quant' message to ensure all of your Pbinds are synced.
+////It should look like this: ~blip.play(quant:1)
 
 //LOAD ALL OF THIS FIRST
 (
@@ -66,35 +66,44 @@ Synth(\varSaw);
 //Blip.ar Pbind
 ~blipStrtPbind = Pbind(
 	\instrument, \blip,
-	\freq, Pdefn(\freqBlip, 440),
-	\dur, Pwrand([Pexprand(0.29,0.3),Pexprand(0.3,0.31)],[0.8,0.2],inf),
+	// have duration range from .1 to .3 80% of the time, .3 to .5 20% of the time
+	// durations are chosen on exponential range
+	\dur, Pwrand([Pexprand(0.1,0.3),Pexprand(0.3,0.5)],[0.8,0.2],inf),
+	// choose level randomly with no repeats
 	\lev, Pdefn(\levBlip, Pxrand([0.25,0.5,0.75,1,1.25],inf)),
+	// choose amp randomly from range of .1 to .5
 	\amp, Pdefn(\ampBlip, Pwhite(0.1,0.5,inf)),
 	\pan, Pdefn(\panAll, 0),
 	\out, 0,
+	// choose 100 60% of the time, but 199 to 100 40% of the time, exponentially decreasing
 	\nharm, Pdefn(\nharmBlip, Pwrand([200, Pexprand(199,100)],[0.6,0.4], inf)),
 	\scale, Pdefn(\scaleAll, Scale.minorPentatonic),
-	\degree, Pdefn(\degAll, Pseq([1,2,3,4,5], inf)),
+	// plays note groupings in order
+	\degree, Pdefn(\degAll, Pseq([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf)),
 	\tempo, Pdefn(\tempoAll, 1);
 );
 
 //VarSaw.ar Pbind
 ~varsawStrtPbind = Pbind(
 	\instrument, \varSaw,
-	\freq, Pdefn(\freqVarSaw, 440),
-	\lev, Pdefn(\levVarSaw, 1),
+	// choose level randomly with no repeats
+	\lev, Pdefn(\levVarSaw, Pxrand([0.25,0.5,0.75,1,1.25],inf)),
+	// choose attack time randomly from range .01 to.1
 	\atk, Pdefn(\atkVarSaw, Pwhite(0.01,0.1,inf)),
+	// choose release time exponentially from range .1 to .5
 	\rel, Pdefn(\relVarSaw, Pexprand(0.1,0.5,inf)),
+	// choose amp randomly from range  .1 to .5
 	\amp, Pdefn(\ampVarSaw, Pwhite(0.1,0.5,inf)),
 	\pan, Pdefn(\panAll, 0),
 	\out, 0,
+	// choose width randomly from range  .1 to 1
 	\width, Pdefn(\widthVarSaw, Pwhite(0.1,1,inf)),
 	\scale, Pdefn(\scaleAll, Scale.minorPentatonic),
-	\degree, Pdefn(\degAll, Pseq([1,2,3,4,5], inf)),
+	// plays note groupings in order
+	\degree, Pdefn(\degAll, Pseq([[0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]], inf)),
 	\tempo, Pdefn(\tempoAll, 1);
 );
 
-// [0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]
 )
 
 
@@ -102,10 +111,10 @@ Synth(\varSaw);
 
 //PART 3. Create a GUI which can control the following:
 
-//-Buttons to change the pitch (degree) pattern within each Pbind (at least five)
-//-Be able to change the volume of each SynthDef (2 sliders, 'lev' argument in each SynthDef and their Pbinds)
+////-Buttons to change the pitch (degree) pattern within each Pbind (at least five)
+////-Be able to change the volume of each SynthDef (2 sliders, 'lev' argument in each SynthDef and their Pbinds)
 //-Make your GUI clean, colorful, intuitive and inviting, and be sure to implement StaticText to label sections of your GUI with text.
-//-Consider dividing sections of your GUI with panels (CompositeView.new)
+////-Consider dividing sections of your GUI with panels (CompositeView.new)
 
 /*****GUI CODE GOES HERE*****/
 (
@@ -113,8 +122,8 @@ case {w.class == Window} {w.close};
 w = Window.new("There Might Be Music", Rect.new(200,200,550,475));
 w.front;
 
-~txtBkg = Color.white;
-~txtClr = Color.red;
+~txtBkg = Color.grey;
+~txtClr = Color.black;
 ~btnOnBkg = Color.green;
 ~btnOnClr = Color.black;
 ~btnOffBkg = Color.red;
@@ -181,37 +190,37 @@ w.front;
 // FREQUENCY KNOBS //
 
 
-~freqBlip = CompositeView(~panelBlip, Rect.new(135,60,70,70));
+// ~freqBlip = CompositeView(~panelBlip, Rect.new(135,60,70,70));
 
-~freqBlipKnob = Knob.new(~freqBlip, Rect.new(10,0,50,50))
-.action_({
-	arg knb;
-	Pdefn(\freqBlip, (440 + (440 * knb.value)));
-});
-~freqBlipTxt = StaticText.new(~freqBlip, Rect.new(0,50,70,20))
-.string_("Frequency")
-.font_(Font("Monaco", 14))
-.background_(~txtBkg)
-.stringColor_(~txtClr);
+// ~freqBlipKnob = Knob.new(~freqBlip, Rect.new(10,0,50,50))
+// .action_({
+// 	arg knb;
+// 	Pdefn(\freqBlip, (440 + (440 * knb.value)));
+// });
+// ~freqBlipTxt = StaticText.new(~freqBlip, Rect.new(0,50,70,20))
+// .string_("Frequency")
+// .font_(Font("Monaco", 14))
+// .background_(~txtBkg)
+// .stringColor_(~txtClr);
 
-~freqVarSaw = CompositeView(~panelVarSaw, Rect.new(135,60,70,70));
+// ~freqVarSaw = CompositeView(~panelVarSaw, Rect.new(135,60,70,70));
 
-~freqVarSawKnob = Knob.new(~freqVarSaw, Rect.new(10,0,50,50))
-.action_({
-	arg knb;
-	Pdefn(\freqVarSaw, (440 + (440 * knb.value)));
-});
-~freqVarSawTxt = StaticText.new(~freqVarSaw, Rect.new(0,50,70,20))
-.string_("Frequency")
-.font_(Font("Monaco", 14))
-.background_(~txtBkg)
-.stringColor_(~txtClr);
+// ~freqVarSawKnob = Knob.new(~freqVarSaw, Rect.new(10,0,50,50))
+// .action_({
+// 	arg knb;
+// 	Pdefn(\freqVarSaw, (440 + (440 * knb.value)));
+// });
+// ~freqVarSawTxt = StaticText.new(~freqVarSaw, Rect.new(0,50,70,20))
+// .string_("Frequency")
+// .font_(Font("Monaco", 14))
+// .background_(~txtBkg)
+// .stringColor_(~txtClr);
 
 
 // NHARM SLIDER //
 
 
-~nharmBlip = CompositeView.new(~panelBlip, Rect.new(90,150,160,50));
+~nharmBlip = CompositeView.new(~panelBlip, Rect.new(90,110,160,50));
 
 ~nharmSlider = Slider.new(~nharmBlip, Rect.new(0,0,160,20))
 .action_({
@@ -229,7 +238,7 @@ w.front;
 // WIDTH SLIDER //
 
 
-~widthVarSaw = CompositeView.new(~panelVarSaw, Rect.new(90,150,160,50));
+~widthVarSaw = CompositeView.new(~panelVarSaw, Rect.new(90,110,160,50));
 
 ~widthSlider = Slider.new(~widthVarSaw, Rect.new(0,0,160,20))
 .action_({
@@ -247,7 +256,7 @@ w.front;
 // STOP BUTTONS //
 
 
-~stopBlip = Button.new(~panelBlip, Rect.new(130,210,80,30))
+~stopBlip = Button.new(~panelBlip, Rect.new(130,170,80,30))
 .action_({
 	arg btn;
 	if (btn.value == 1) {
@@ -258,7 +267,7 @@ w.front;
 })
 .states_([["OFF", ~btnOffClr, ~btnOffBkg], ["ON", ~btnOnClr, ~btnOnBkg]]);
 
-~stopVarSaw = Button.new(~panelVarSaw, Rect.new(130,210,80,30))
+~stopVarSaw = Button.new(~panelVarSaw, Rect.new(130,170,80,30))
 .action_({
 	arg btn;
 	if (btn.value == 1) {
@@ -405,8 +414,8 @@ w.front;
 
 //Extra Credit (5 pts. each):
 ////-Be able to start and stop both of the Pbinds with a single button in your GUI. (I would recommend using an 'if' statement in this case.)
-//-Be able to change the global pitch scale with a multi-state button. (at least 2 scale choices [major/minor would work]). HINTS: Create global variables to handle changing scales (Scale.major, Scale.minor, etc.). Put the scale possibilities into an array. You'll need to wrap the \scale parameter in your Pbinds in a Pdefn to be able to change them at run-time.
-//Give your GUI the ability to change tempo using a knob (hints: Knob value should control the \stretch parameter in your Pbinds. Research .linlin for scaling/remapping knob values to a useful scale for stretch values. Caution: a stretch value of 0.0 will overload the server and likely crash your computer. You *must* scale the value to avoid this.)
+////-Be able to change the global pitch scale with a multi-state button. (at least 2 scale choices [major/minor would work]). HINTS: Create global variables to handle changing scales (Scale.major, Scale.minor, etc.). Put the scale possibilities into an array. You'll need to wrap the \scale parameter in your Pbinds in a Pdefn to be able to change them at run-time.
+////Give your GUI the ability to change tempo using a knob (hints: Knob value should control the \stretch parameter in your Pbinds. Research .linlin for scaling/remapping knob values to a useful scale for stretch values. Caution: a stretch value of 0.0 will overload the server and likely crash your computer. You *must* scale the value to avoid this.)
 
 
 
