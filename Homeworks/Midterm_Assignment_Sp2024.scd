@@ -18,7 +18,6 @@ s.boot;
 /********LOAD SYNTHDEFS**********/
 (
 //Blip.ar SynthDef
-(
 SynthDef.new(\blip, {
 	arg freq=440, dur=0.1, lev=1, amp=0.05, pan=0, out=0, nharm=200;
 	var sig, env;
@@ -28,12 +27,8 @@ SynthDef.new(\blip, {
 	sig = Pan2.ar(sig, pan);
 	Out.ar(out, sig);
 }).add;
-)
-
-
 
 //VarSaw.ar SynthDef
-(
 SynthDef.new(\varSaw, {
 	arg freq=440, atk=0.1, rel=1, amp=0.05, lev=1, pan=0, out=0, width=0.5;
 	var sig, env;
@@ -43,8 +38,6 @@ SynthDef.new(\varSaw, {
 	sig = Pan2.ar(sig, pan);
 	Out.ar(out, sig);
 }).add;
-)
-
 
 )
 
@@ -71,7 +64,6 @@ Synth(\varSaw);
 (
 /*****PBinds*****/
 //Blip.ar Pbind
-(
 ~blipStrtPbind = Pbind(
 	\instrument, \blip,
 	\freq, Pdefn(\freqBlip, 440),
@@ -84,13 +76,9 @@ Synth(\varSaw);
 	\scale, Pdefn(\scaleAll, Scale.minorPentatonic),
 	\degree, Pdefn(\degAll, Pseq([1,2,3,4,5], inf)),
 	\tempo, Pdefn(\tempoAll, 1);
-).play;
-)
-
-
+);
 
 //VarSaw.ar Pbind
-(
 ~varsawStrtPbind = Pbind(
 	\instrument, \varSaw,
 	\freq, Pdefn(\freqVarSaw, 440),
@@ -105,7 +93,6 @@ Synth(\varSaw);
 	\degree, Pdefn(\degAll, Pseq([1,2,3,4,5], inf)),
 	\tempo, Pdefn(\tempoAll, 1);
 );
-)
 
 // [0,2,4],[1,3,4],[2,3,5],[1,2,4],[2,4,5]
 )
