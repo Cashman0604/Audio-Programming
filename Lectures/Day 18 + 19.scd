@@ -6,7 +6,7 @@ s.reboot;
 
 // Reference Site: http://doc.sccode.org/Reference/AudioDeviceSelection.html
 
-// Mac OSX && Windows ISA 
+// Mac OSX && Windows ISA
 ServerOptions.devices;
 
 "inputs ".post; ServerOptions.inDevices;
@@ -22,12 +22,12 @@ ServerOptions.devices;
 // Change Device
 (
 s.options.inDevice_(
-    "Put Input Device Name Here"
+    "Desktop Microphone"
 );
 
 
 s.options.outDevice_(
-    "Put Output Device Name Here"
+    "Headphones"
 );
 )
 
@@ -99,3 +99,59 @@ SynthDef.new(\mic,{
 )
 
 Synth(\mic, [\mix, 1.0]);
+
+// ** DAY 19 ** //
+// Variable delay time using oscillator
+(
+SynthDef.new(\mic,{
+    arg in=0, out=0, delayTime=0.3, decay=3, mix=(-0.5), amp=1;
+    var sig, delay;
+    sig = SoundIn.ar(in!2) * amp;
+    delay = CombL.ar(sig, 0.5, SinOsc.kr([0.3,0.32]).exprange(0.1,0.4), decay); // decay is how long it takes to reduce the signal by 60dB
+    sig = XFade2.ar(sig, delay, mix);
+    Out.ar(out, sig);
+}).add;
+)
+
+Synth(\mic, [\mix, 1.0]);
+
+
+{SinOsc.kr(0.3).exprange(0.1,0.4)}.plot(5);
+
+
+// Split these apart to create signal flow/chain
+(
+SynthDef.new(\mic, {
+    arg in=0, out=0, amp=1;
+    var sig;
+    sig = SoundIn.ar(in!2) * amp;
+    Out.ar(out,sig);
+}).add;
+)
+
+Synth(\mic);
+
+
+(
+SynthDef.new(\delay, {
+    arg in=0, out=0, decay=3, mix=(-0.5), amp=1, delHz=0.25, delMin=0.1, delMax=0.4;
+    var sig, delay;
+    sig = In.ar(in, 2) * amp;
+    delay = CombL.ar(
+        sig, 0.5, SinOsc.kr([delHz, delHz * 0.9]).exprange(delMin, delMax), decay
+    );
+    sig = XFade2.ar(sig,delay,mix);
+    Out.ar(out, sig);
+}).add;
+)
+
+// Allocate a bus (two-channel private bus)
+~delBus = Bus.audio(s, 2);
+
+(
+~micGrp = Group.new;
+~delGrp = Group.after(~micGrp);
+
+~micSynth = Synth(\mic, [\in, 0, \out, ~delBus], ~micGrp);
+~delSynth = Synth(\delay, [\in, ~delBus, \out, 0], ~delGrp);
+)
