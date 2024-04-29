@@ -26,10 +26,26 @@ Share your video in class on the final class day!
 
 s.makeGui; //hit record in the GUI to begin recording stereo output from SC
 
-e[\event1].value;
-e[\event2].value;
-e[\event3].value;
+(
+r = Routine({
+	e[\event1].value;
+	12.wait;
+	e[\event2].value;
+	8.wait;
+	e[\event3].value;
+	6.wait;
+	e[\event4].value;
+	12.wait;
+	e[\event5].value;
+	12.wait;
+	e[\event6].value;
+	15.wait;
+	e[\eventEND].value;
+})
+)
 
+
+r.play;
 
 (
 //1. Server config
@@ -54,7 +70,7 @@ ServerTree.removeAll;
 ~makeBuffers = {
 	~gCube = Buffer.read(s, ~path ++ "sounds/GameCube.mp3");
 	~gCubeFull = Buffer.read(s, ~path ++ "sounds/GameCubeFull.mp3");
-	"~gCubeFull: ".post; ~gCubeFull.postln;
+	// "~gCubeFull: ".post; ~gCubeFull.postln;
 };
 
 ~makeBusses = {
@@ -62,6 +78,7 @@ ServerTree.removeAll;
 };
 
 ~makeEvents = {
+	// ~tempoClock = TempoClock(2);
     e = Dictionary.new;
     e.add(\event1 -> {
         ~gcFull = Routine({
@@ -102,27 +119,11 @@ ServerTree.removeAll;
 			\group, ~synthGrp,
 			\out, ~mainBus
 		).play;
+		"Event 1".postln;
     });
 
 	e.add(\event2 -> {
 		~gcFull.stop;
-		/*~gcHit = Routine({
-			while { ~gcFull.isPlaying } { 0.1.wait };
-			{
-				var durInS = (~gCube.numFrames / s.sampleRate).asInteger;
-				var rate = ([-12,-7,-5,-3,-1,0,2,4,5,7]+6).choose.midiratio;
-				{
-					Synth.new(\bufPlayer, [
-						\buf, ~gCube,
-						\rate, rate,
-						\amp, exprand(0.9,1.6),
-						\pan, rrand(-1,1),
-						\out, ~mainBus
-					], ~synthGrp);
-				}.fork;
-				(durInS - (durInS / rate.asInteger) + 0.1).abs.wait;
-			}.loop;
-		}).play;*/
 		~gcHit = {
 			{
 					Synth.new(\bufPlayer, [
@@ -139,7 +140,8 @@ ServerTree.removeAll;
 			\amp, Pexprand(1.4,1.7),
 			\cfLo, 100,
 			\chHi, 1000
-		);
+		).play;
+		"Event 2".postln;
 	});
 
 	e.add(\event3 -> {
@@ -162,9 +164,106 @@ ServerTree.removeAll;
 				(0.25).wait;
 			}.loop;
 		}.fork;
+		"Event 3".postln;
+	});
 
-		// TODO: ADD ANOTHER MUSICAL ELEMENT
+	e.add(\event4 -> {
+		Pbindef(\notes,
+			\instrument, \bpfSaw,
+			\dur, 1,
+			\freq, ([[0,2,5],[0,3,7],[-3,0,2,7],[-2,2,7]].choose).midiratio,
+			\amp, Pexprand(0.8,1.2),
+			\pan, Pwhite(-1,1),
+			\rel, Pwhite(1,2),
+			\cfLo, 100,
+			\cfHi, 300,
+			\out, ~mainBus,
+			\group, ~synthGrp
+		).play;
+		"Event 4".postln;
+	});
 
+	e.add(\event5 -> {
+		var hits = [-3,0,4,2,-1,2,5,4];
+		~gcFull = Routine({
+            var plays = 1, rate = 1;
+            var durInS = (~gCubeFull.numFrames / s.sampleRate).asInteger;
+            {
+                {
+                    Synth.new(\bufPlayer, [
+                        \buf, ~gCubeFull,
+                        \rate, rate,
+                        \spos, ~gCubeFull.numFrames * (1.0001 - (1/plays)),
+                        \amp, exprand(0.05,0.25),
+                        \pan, rrand (-0.5,0.5),
+                        \out, ~mainBus
+                    ], ~synthGrp);
+                    plays = plays + 1;
+                    if (plays > 2) { plays = 1; };
+                }.fork;
+				(((durInS * (1/plays)) + 0.2) / rate).wait;
+            }.loop;
+        }).play;
+
+		~gcMel.stop;
+
+		~gcMel = {
+			var i = 0;
+			{
+				Synth.new(\bufPlayer, [
+					\buf, ~gCube,
+					\rate, hits[i].midiratio,
+					\amp, exprand(1.2,1.6),
+					\pan, rrand(-1,1),
+					\out, ~mainBus
+				], ~synthGrp);
+				i = i + 1;
+				if (i > (hits.size - 1)) {
+					i = 0;
+					if (~gcHit.isPlaying) {~gcHit.stop;};
+				};
+				(0.25).wait;
+			}.loop;
+		}.fork;
+		"Event 5".postln;
+	});
+
+	e.add(\event6 -> {
+		~gcMel.stop;
+		Pbindef(\notes,
+			\freq, ([0,2,4,5,7,9,10].choose).midiratio
+		).play;
+		Pbindef(\chords).stop;
+		Pbindef(\chords,
+			\instrument, \bpfSaw,
+			\dur, 1,
+			\midinote, Pxrand([
+				[57,60,64],
+				[62,65,70,72],
+				[58,62,65,67],
+				[64,67,70]
+			], inf),
+			\amp, Pexprand(1.25,1.6),
+			\cfLo, 300,
+			\cfHi, 800,
+			\atk, 0.2,
+			\rel, 1,
+			\pan, Pwhite(-0.5,0.5,inf),
+			\group, ~synthGrp,
+			\out, ~mainBus
+		).play;
+		"Event 6".postln;
+	});
+
+
+
+	e.add(\eventEND -> {
+		~gcFull.stop;
+		~gcHit.stop;
+		~gcMel.stop;
+		Pbindef(\notes).stop;
+		Pbindef(\chords).stop;
+		"Event End".postln;
 	});
 };
 
@@ -226,6 +325,7 @@ s.waitForBoot({
 		Out.ar(out, sig);
 	}).add;
 
+
 	SynthDef.new(\reverb, {
 		arg in, mix=0.5, room=0.5, damp=0.2, out=0;
 		var sig;
@@ -243,13 +343,12 @@ s.waitForBoot({
 	s.sync;
 
 	"Loading Complete".postln;
-	"~gCubeFull after loading: ".post; ~gCubeFull.postln;
+	// "~gCubeFull after loading: ".post; ~gCubeFull.postln;
 });
 
 )
 
-e[\event1].value;
-
+r.play;
 
 
 
