@@ -28,22 +28,25 @@ s.makeGui; //hit record in the GUI to begin recording stereo output from SC
 
 (
 r = Routine({
+	e[\event0].value;
+	8.wait;
 	e[\event1].value;
-	12.wait;
+	14.wait;
 	e[\event2].value;
 	8.wait;
 	e[\event3].value;
-	6.wait;
+	8.wait;
 	e[\event4].value;
 	12.wait;
 	e[\event5].value;
-	12.wait;
+	16.wait;
 	e[\event6].value;
-	15.wait;
+	14.wait;
+	e[\event7].value;
+	10.wait;
 	e[\eventEND].value;
 })
 )
-
 
 r.play;
 
@@ -70,6 +73,8 @@ ServerTree.removeAll;
 ~makeBuffers = {
 	~gCube = Buffer.read(s, ~path ++ "sounds/GameCube.mp3");
 	~gCubeFull = Buffer.read(s, ~path ++ "sounds/GameCubeFull.mp3");
+	~gCubeSHit = Buffer.read(s, ~path ++ "sounds/StartHit.wav");
+	~gCubeEHit = Buffer.read(s, ~path ++ "sounds/EndHit.wav");
 	// "~gCubeFull: ".post; ~gCubeFull.postln;
 };
 
@@ -80,7 +85,44 @@ ServerTree.removeAll;
 ~makeEvents = {
 	// ~tempoClock = TempoClock(2);
     e = Dictionary.new;
+
+	e.add(\event0 -> {
+		"Event 0 - Chords and Start Hit".postln;
+		Pbindef(\chords,
+			\instrument, \bpfSaw,
+			\dur, 1,
+			\midinote, Pxrand([
+				[60,64,67,70],
+				[60,63,67,70],
+				[64,67,72],
+				[58,62,65,67]
+			], inf),
+			\amp, Pexprand(1.25,1.6),
+			\cfLo, 300,
+			\cfHi, 800,
+			\atk, 0.2,
+			\rel, 1,
+			\pan, Pwhite(-0.5,0.5,inf),
+			\group, ~synthGrp,
+			\out, ~mainBus
+		).play;
+
+		~gcStHit = Routine({
+			(7.5).wait;
+			{
+				Synth.new(\bufPlayer, [
+                        \buf, ~gCubeSHit,
+                        \rate, 1,
+                        \amp, exprand(1,1.5),
+                        \pan, 0,
+                        \out, ~mainBus
+                    ], ~fxGrp);
+			}.fork;
+		}).play;
+	});
+
     e.add(\event1 -> {
+		~gcStHit.stop;
         ~gcFull = Routine({
             var plays = 1, rate = 0.75;
             var durInS = (~gCubeFull.numFrames / s.sampleRate).asInteger;
@@ -100,26 +142,7 @@ ServerTree.removeAll;
 				(((durInS * (1/plays)) + 0.2) / rate).wait;
             }.loop;
         }).play;
-
-		Pbindef(\chords,
-			\instrument, \bpfSaw,
-			\dur, 1,
-			\midinote, Pxrand([
-				[60,64,67,70],
-				[60,63,67,70],
-				[64,67,72],
-				[58,62,65,67]
-			], inf),
-			\amp, Pexprand(1.25,1.6),
-			\cfLo, 300,
-			\cfHi, 800,
-			\atk, 0.2,
-			\rel, 1,
-			\pan, Pwhite(-0.5,0.5,inf),
-			\group, ~synthGrp,
-			\out, ~mainBus
-		).play;
-		"Event 1".postln;
+		"Event 1 - Add GameCube Notes".postln;
     });
 
 	e.add(\event2 -> {
@@ -141,7 +164,7 @@ ServerTree.removeAll;
 			\cfLo, 100,
 			\chHi, 1000
 		).play;
-		"Event 2".postln;
+		"Event 2 - Add Random GameCube Notes".postln;
 	});
 
 	e.add(\event3 -> {
@@ -164,7 +187,7 @@ ServerTree.removeAll;
 				(0.25).wait;
 			}.loop;
 		}.fork;
-		"Event 3".postln;
+		"Event 3 - Add defined structure".postln;
 	});
 
 	e.add(\event4 -> {
@@ -180,7 +203,7 @@ ServerTree.removeAll;
 			\out, ~mainBus,
 			\group, ~synthGrp
 		).play;
-		"Event 4".postln;
+		"Event 4 - Add low thumping".postln;
 	});
 
 	e.add(\event5 -> {
@@ -225,11 +248,12 @@ ServerTree.removeAll;
 				(0.25).wait;
 			}.loop;
 		}.fork;
-		"Event 5".postln;
+		"Event 5 - Add Gamecube Notes and change structure ".postln;
 	});
 
 	e.add(\event6 -> {
 		~gcMel.stop;
+
 		Pbindef(\notes,
 			\freq, ([0,2,4,5,7,9,10].choose).midiratio
 		).play;
@@ -252,12 +276,31 @@ ServerTree.removeAll;
 			\group, ~synthGrp,
 			\out, ~mainBus
 		).play;
-		"Event 6".postln;
+		"Event 6 - Stop structure and change low hits and chords".postln;
+	});
+
+	e.add(\event7 -> {
+		~gcFull.stop;
+		~gcEnHit = Routine({
+			{
+				3.wait;
+				Synth.new(\bufPlayer, [
+                        \buf, ~gCubeEHit,
+                        \rate, 1,
+                        \amp, exprand(1.2,1.7),
+                        \pan, 0,
+                        \out, ~mainBus
+                    ], ~fxGrp);
+			}.fork;
+		}).play;
+		"Event 7 - Play the final Hit sound".postln;
 	});
 
 
 
 	e.add(\eventEND -> {
+		~gcStHit.stop;
+		~gcEnHit.stop;
 		~gcFull.stop;
 		~gcHit.stop;
 		~gcMel.stop;
